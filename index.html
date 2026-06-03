@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>V2V 反馈</title>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+            margin: 0;
+            padding: 0;
+            background: #f5f6fa;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        label {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #4a90e2;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:active {
+            background: #357ABD;
+        }
+
+        .success {
+            color: #27ae60;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>V2V 反馈</h2>
+
+        <!-- 模版选择 -->
+        <label>反馈类型</label>
+        <select id="template" onchange="updateForm()">
+            <option value="new_issue">New Issue Raise Up</option>
+            <option value="etsy">ETSY</option>
+        </select>
+
+        <!-- AH ID -->
+        <label>AH ID</label>
+        <input id="ahId" placeholder="请输入 AH ID" />
+
+        <!-- New Issue Description（仅在 New Issue Raise Up 时显示） -->
+        <div id="descBlock">
+            <label>New Issue Description</label>
+            <textarea id="description" placeholder="请描述新的 Issue"></textarea>
+        </div>
+
+        <!-- 上传截图 -->
+        <label>上传截图（可选）</label>
+        <input type="file" id="image" accept="image/*" />
+
+        <!-- 提交人 -->
+        <label>提交人</label>
+        <input id="author" placeholder="请输入你的姓名" />
+
+        <button onclick="submitFeedback()">提交反馈</button>
+
+        <div id="msg"></div>
+    </div>
+
+    <script>
+        function updateForm() {
+            const template = document.getElementById("template").value;
+            const descBlock = document.getElementById("descBlock");
+
+            if (template === "etsy") {
+                descBlock.classList.add("hidden");
+            } else {
+                descBlock.classList.remove("hidden");
+            }
+        }
+
+        async function submitFeedback() {
+            const template = document.getElementById("template").value;
+            const ahId = document.getElementById("ahId").value.trim();
+            const description = document.getElementById("description").value.trim();
+            const author = document.getElementById("author").value.trim();
+            const msg = document.getElementById("msg");
+
+            // 校验
+            if (!ahId || !author) {
+                msg.innerHTML = "<p class='error'>请填写完整信息</p>";
+                return;
+            }
+
+            if (template === "new_issue" && !description) {
+                msg.innerHTML = "<p class='error'>请填写 New Issue Description</p>";
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("template", template);
+            formData.append("ahId", ahId);
+            formData.append("description", template === "new_issue" ? description : "");
+            formData.append("author", author);
+
+            const imageFile = document.getElementById("image").files[0];
+            if (imageFile) {
+                formData.append("image", imageFile);
+            }
+
+            try {
+                const res = await fetch("http://localhost:3000/feedback", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (res.ok) {
+                    msg.innerHTML = "<p class='success'>提交成功，感谢你的反馈！</p>";
+                } else {
+                    msg.innerHTML = "<p class='error'>提交失败，请稍后再试</p>";
+                }
+            } catch (err) {
+                msg.innerHTML = "<p class='error'>网络错误，请检查连接</p>";
+            }
+        }
+    </script>
+</body>
+</html>
+
